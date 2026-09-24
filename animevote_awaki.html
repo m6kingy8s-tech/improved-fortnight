@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AnimeVote — Vote pour ton anime</title>
+<style>
+:root{
+  --red:#e50914; --red2:#ff2633; --black:#070707; --card:#111; --text:#f5f5f5; --muted:#999;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at top,#220507 0,#080808 35%,#050505 100%);
+color:var(--text);font-family:Arial,Helvetica,sans-serif}
+header{position:sticky;top:0;z-index:10;background:rgba(5,5,5,.94);backdrop-filter:blur(10px);border-bottom:1px solid #2a080b}
+.nav{max-width:1250px;margin:auto;padding:18px 22px;display:flex;align-items:center;gap:20px}
+.logo{font-size:25px;font-weight:900;letter-spacing:.5px}.logo span{color:var(--red)}
+.search{margin-left:auto;width:min(360px,45vw);background:#151515;border:1px solid #333;border-radius:10px;padding:11px 14px;color:white;outline:none}
+.search:focus{border-color:var(--red)}
+.hero{max-width:1250px;margin:auto;padding:55px 22px 28px}
+.hero h1{font-size:clamp(36px,6vw,70px);margin:0;text-transform:uppercase;line-height:.95}
+.hero h1 span{color:var(--red)}
+.hero p{color:#bbb;max-width:650px;font-size:17px}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:25px}
+.stat{background:#121212;border:1px solid #2b2b2b;border-radius:10px;padding:12px 16px}.stat b{color:var(--red)}
+main{max-width:1250px;margin:auto;padding:0 22px 60px}
+.section-title{display:flex;align-items:center;justify-content:space-between;margin:18px 0}
+.section-title h2{font-size:25px}.section-title span{color:#888;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:18px}
+.card{background:linear-gradient(180deg,#151515,#0d0d0d);border:1px solid #282828;border-radius:12px;overflow:hidden;transition:.2s;position:relative}
+.card:hover{transform:translateY(-5px);border-color:#8f1018;box-shadow:0 12px 30px #000}
+.poster{width:100%;aspect-ratio:2/3;object-fit:cover;background:#191919;display:block}
+.info{padding:11px}.rank{color:#777;font-size:12px;font-weight:bold}.name{font-weight:800;font-size:15px;min-height:38px;margin:5px 0}
+.votes{font-size:12px;color:#aaa;margin-bottom:9px}
+button{width:100%;border:0;border-radius:8px;padding:10px;background:var(--red);color:white;font-weight:900;cursor:pointer}
+button:hover{background:var(--red2)}
+button.voted{background:#351014;color:#ff5a62;cursor:default}
+.empty{padding:35px;text-align:center;color:#999;grid-column:1/-1}
+footer{text-align:center;color:#666;padding:30px;border-top:1px solid #1d1d1d}
+@media(max-width:600px){.nav{padding:13px}.hero{padding-top:35px}.search{width:45%}.grid{grid-template-columns:repeat(2,1fr);gap:12px}.hero p{font-size:15px}}
+</style>
+</head>
+<body>
+<header><div class="nav">
+  <div class="logo">ANIME<span>VOTE</span></div><div style="font-size:13px;color:#aaa;border-left:1px solid #333;padding-left:14px">Créé par <b style="color:#e50914">AWAKI</b></div>
+  <input id="search" class="search" placeholder="🔎 Rechercher un anime...">
+</div></header>
+
+<section class="hero">
+  <h1>Vote pour ton <span>anime</span></h1>
+  <p>Une seule catégorie. 100 anime. Choisis ton préféré et construisons ensemble le classement.</p>
+  <div class="stats">
+    <div class="stat">📺 Anime : <b id="count">100</b></div>
+    <div class="stat">🗳️ Tes votes : <b id="myVotes">0</b></div>
+  </div>
+</section>
+
+<main>
+  <div class="section-title"><h2>🔥 Classement Anime</h2><span>Les plus votés en premier</span></div>
+  <div id="grid" class="grid"><div class="empty">Chargement des posters...</div></div>
+</main>
+<footer>ANIMEVOTE — Une seule catégorie : ANIME 🖤❤️<br><strong style="color:#e50914">Créé par AWAKI</strong></footer>
+
+<script>
+const titles = [
+"One Piece","Naruto: Shippuden","Naruto","Dragon Ball Z","Dragon Ball Super","Jujutsu Kaisen",
+"Demon Slayer","Bleach","Bleach: Thousand-Year Blood War","Attack on Titan","My Hero Academia",
+"Hunter x Hunter","Black Clover","Solo Leveling","One Punch Man","Mob Psycho 100","Death Note",
+"Fullmetal Alchemist: Brotherhood","Fairy Tail","Fire Force","Blue Lock","Haikyuu!!","Chainsaw Man",
+"Vinland Saga","Dr. Stone","Sword Art Online","JoJo's Bizarre Adventure","Code Geass",
+"Steins;Gate","Re:ZERO -Starting Life in Another World-","Tokyo Revengers","The Seven Deadly Sins",
+"Akame ga Kill!","Assassination Classroom","Parasyte -the maxim-","Baki","Baki Hanma","Kengan Ashura",
+"Record of Ragnarok","The Eminence in Shadow","Mashle: Magic and Muscles","Kaiju No. 8","Wind Breaker",
+"SPY x FAMILY","Frieren: Beyond Journey's End","The Apothecary Diaries","Oshi no Ko",
+"Classroom of the Elite","Overlord","That Time I Got Reincarnated as a Slime","Mushoku Tensei",
+"KonoSuba","No Game No Life","Blue Exorcist","Soul Eater","Noragami","Tower of God","D.Gray-man",
+"Inuyasha","Yu Yu Hakusho","Gintama","Initial D","Pokémon","Digimon Adventure","Yu-Gi-Oh!",
+"Beyblade","Inazuma Eleven","Captain Tsubasa","Slam Dunk","Kuroko's Basketball","Hajime no Ippo",
+"The Promised Neverland","Made in Abyss","Erased","Another","Darling in the FranXX",
+"The Rising of the Shield Hero","Fate/Zero","Fate/stay night: Unlimited Blade Works",
+"Dororo","Samurai Champloo","Cowboy Bebop","Trigun","Psycho-Pass","Monster","Neon Genesis Evangelion",
+"Great Teacher Onizuka","Magi: The Labyrinth of Magic","Soul Eater NOT!","Noragami Aragoto",
+"Tokyo Ghoul","Black Lagoon","Kill la Kill","The God of High School","86 Eighty-Six",
+"Cyberpunk: Edgerunners","Paranoia Agent","Devilman Crybaby","Pluto"
+];
+
+let data = titles.map((title,i)=>({id:i,title,poster:"",votes:Number(localStorage.getItem("vote_"+i)||0)}));
+let voted = JSON.parse(localStorage.getItem("myAnimeVotes")||"[]");
+
+function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
+function totalVotes(){return data.reduce((a,b)=>a+b.votes,0)}
+
+async function loadPosters(){
+  async function anilist(title){
+    const q=`query ($search:String!){ Media(search:$search,type:ANIME){ title { romaji english native } coverImage { extraLarge large } } }`;
+    try{const r=await fetch("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query:q,variables:{search:title}})});const j=await r.json();return j?.data?.Media?.coverImage?.extraLarge||j?.data?.Media?.coverImage?.large||"";}catch(e){return "";}
+  }
+  async function jikan(title){
+    try{const r=await fetch("https://api.jikan.moe/v4/anime?q="+encodeURIComponent(title)+"&limit=1");const j=await r.json();return j?.data?.[0]?.images?.jpg?.large_image_url||j?.data?.[0]?.images?.jpg?.image_url||"";}catch(e){return "";}
+  }
+  async function getPoster(title){let url=await anilist(title);if(!url)url=await jikan(title);return url;}
+  for(let i=0;i<data.length;i+=5){const batch=data.slice(i,i+5);const posters=await Promise.all(batch.map(x=>getPoster(x.title)));batch.forEach((x,k)=>x.poster=posters[k]||"");render();}
+  render();
+}
+
+function render(){
+  const term=document.getElementById("search").value.toLowerCase().trim();
+  const shown=data.filter(x=>x.title.toLowerCase().includes(term)).sort((a,b)=>b.votes-a.votes);
+  document.getElementById("count").textContent=data.length;
+  document.getElementById("myVotes").textContent=voted.length;
+  const grid=document.getElementById("grid");
+  if(!shown.length){grid.innerHTML='<div class="empty">Aucun anime trouvé.</div>';return}
+  grid.innerHTML=shown.map((x,i)=>`
+    <article class="card">
+      <img class="poster" src="${x.poster||'https://placehold.co/400x600/111/eee?text='+encodeURIComponent(x.title)}" alt="${escapeHtml(x.title)}" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/400x600/111/eee?text='+encodeURIComponent('Poster indisponible')">
+      <div class="info">
+        <div class="rank">#${i+1}</div>
+        <div class="name">${escapeHtml(x.title)}</div>
+        <div class="votes">🗳️ ${x.votes} vote${x.votes>1?"s":""}</div>
+        <button class="${voted.includes(x.id)?'voted':''}" onclick="vote(${x.id})">${voted.includes(x.id)?"✓ VOTÉ":"VOTER"}</button>
+      </div>
+    </article>`).join("");
+}
+function vote(id){
+  if(voted.includes(id)) return;
+  data[id].votes++;
+  voted.push(id);
+  localStorage.setItem("vote_"+id,data[id].votes);
+  localStorage.setItem("myAnimeVotes",JSON.stringify(voted));
+  render();
+}
+document.getElementById("search").addEventListener("input",render);
+loadPosters();
+</script>
+</body>
+</html>
